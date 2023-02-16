@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcing.Core", "EventSourcing.Core\EventSourcing.Core.csproj", "{FD7055FE-FCCC-4AF8-9ACB-775D147FF329}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{38D29876-C20D-4641-861B-A3A940DE0BF1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourcing.Core.Tests", "Tests\EventSourcing.Core.Tests\EventSourcing.Core.Tests.csproj", "{215D85A7-8DEC-455E-930D-5D6CFC077A81}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FD7055FE-FCCC-4AF8-9ACB-775D147FF329}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD7055FE-FCCC-4AF8-9ACB-775D147FF329}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD7055FE-FCCC-4AF8-9ACB-775D147FF329}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD7055FE-FCCC-4AF8-9ACB-775D147FF329}.Release|Any CPU.Build.0 = Release|Any CPU
+		{215D85A7-8DEC-455E-930D-5D6CFC077A81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{215D85A7-8DEC-455E-930D-5D6CFC077A81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{215D85A7-8DEC-455E-930D-5D6CFC077A81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{215D85A7-8DEC-455E-930D-5D6CFC077A81}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{215D85A7-8DEC-455E-930D-5D6CFC077A81} = {38D29876-C20D-4641-861B-A3A940DE0BF1}
+	EndGlobalSection
+EndGlobal
