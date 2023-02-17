@@ -1,27 +1,37 @@
 ﻿using FluentAssertions;
 
-namespace EventSourcing.Core.Tests;
+namespace EventSourcing.Core.Tests.Cart;
 
 public class When_adding_an_item_that_does_not_exist_in_cart
 {
-    private readonly ShoppingCart _shoppingCart;
-    private readonly ShoppingCartItem _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly Core.ShoppingCart _shoppingCart;
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
 
     public When_adding_an_item_that_does_not_exist_in_cart()
     {
-        _shoppingCart = new ShoppingCart();
+        _shoppingCart = Core.ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
     }
     
     [Fact]
     public void Item_is_added_to_cart()
     {
+        var item = new ShoppingCartItem(
+            new ShoppingCartItemState
+            {
+                Cost = 20,
+                Name = _beer.Name,
+                Id = _beer.Id,
+                Quantity = 1
+            }
+        );
+
         _shoppingCart
             .GetItems()
             .Should()
-            .Equal(new ShoppingCart.Item[]
+            .BeEquivalentTo(new[]
             {
-                new(_beer.Id, _beer.Name, _beer.Cost)
+                item
             });
     }
     

@@ -1,3 +1,5 @@
-﻿namespace EventSourcing.Core;
+﻿using EventSourcing.Core.EventStore;
 
-public record ShoppingCartCheckedOutEvent : EventStoreEvent;
+namespace EventSourcing.Core;
+
+public record ShoppingCartCheckedOutEvent(DateTime date) : EventStoreEvent;

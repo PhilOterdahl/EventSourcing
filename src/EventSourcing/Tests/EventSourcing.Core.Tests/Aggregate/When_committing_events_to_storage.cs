@@ -1,17 +1,17 @@
 ﻿using FluentAssertions;
 
-namespace EventSourcing.Core.Tests;
+namespace EventSourcing.Core.Tests.Aggregate;
 
 public class When_committing_events_to_storage
 {
     private readonly ShoppingCart _shoppingCart;
-    private readonly ShoppingCartItem _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
 
     public When_committing_events_to_storage()
     {
-        _shoppingCart = new ShoppingCart();
+        _shoppingCart = ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
-        _shoppingCart.CommitEvents();
+        _shoppingCart.ClearUncommittedEvents();
     }
     
     [Fact]

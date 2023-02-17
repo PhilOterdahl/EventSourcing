@@ -1,3 +1,5 @@
-﻿namespace EventSourcing.Core;
+﻿using EventSourcing.Core.EventStore;
 
-public record ShoppingCartItemAddedEvent(ShoppingCartItem Item) : EventStoreEvent;
+namespace EventSourcing.Core;
+
+public record ShoppingCartItemAddedEvent(ProductState Product) : EventStoreEvent;
