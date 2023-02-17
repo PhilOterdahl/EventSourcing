@@ -1,15 +1,15 @@
 ﻿using FluentAssertions;
 
-namespace EventSourcing.Core.Tests;
+namespace EventSourcing.Core.Tests.Cart;
 
 public class When_removing_an_item_with_quantity_higher_than_one
 {
-    private readonly ShoppingCart _shoppingCart;
-    private readonly ShoppingCartItem _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly Core.ShoppingCart _shoppingCart;
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
 
     public When_removing_an_item_with_quantity_higher_than_one()
     {
-        _shoppingCart = new ShoppingCart();
+        _shoppingCart = Core.ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
         _shoppingCart.AddItem(_beer);
         _shoppingCart.RemoveItem(_beer);
@@ -18,7 +18,15 @@ public class When_removing_an_item_with_quantity_higher_than_one
     [Fact]
     public void Quantity_of_item_is_decreased()
     {
-        var item = new ShoppingCart.Item(_beer.Id, _beer.Name, _beer.Cost);
+        var item = new ShoppingCartItem(
+            new ShoppingCartItemState
+            {
+                Cost = 20,
+                Name = _beer.Name,
+                Id = _beer.Id,
+                Quantity = 1
+            }
+        );
 
         _shoppingCart
             .GetItems()

@@ -1,44 +1,90 @@
-﻿namespace EventSourcing.Core;
+﻿using System.Collections.Immutable;
+using EventSourcing.Core.Aggregate;
+using EventSourcing.Core.EventStore;
 
-public class ShoppingCart
+namespace EventSourcing.Core;
+
+public record ShoppingCartId : StreamId, IStringToStreamIdConverter<ShoppingCartId>
 {
-    public record Item(Guid Id, string Name, decimal Cost)
+    private ShoppingCartId(string value) : base(value)
     {
-        public int Quantity { get; private set; } = 1;
+    }
 
-        public void IncreaseQuantity() => Quantity++;
-        
-        public void DecreaseQuantity() => Quantity--;
-    };
+    public static ShoppingCartId New() => new(Guid.NewGuid().ToString());
+    public static ShoppingCartId FromString(string id) => new(id);
+}
+
+public record ShoppingCartState : AggregateState
+{
+    public bool CheckedOut { get; init; }
+    public DateTime? CheckedOutDate { get; init; }
+    public ImmutableArray<ShoppingCartItem> Items { get; init; } = ImmutableArray<ShoppingCartItem>.Empty;
+}
+
+public class ShoppingCart : Aggregate<ShoppingCartId, ShoppingCartState>
+{
+    public ShoppingCartItem[] GetItems() => State.Items.ToArray();
+    public bool CheckedOut => State.CheckedOut;
+    public DateTime? CheckedOutDate => State.CheckedOutDate;
     
-    public string Id { get; private set; }
-    public bool CheckedOut { get; private set; }
-    
-    public EventStoreEvent[] GetAllEvents() => _allEvents.ToArray();
-    public EventStoreEvent[] GetUncommittedEvents() => _uncommittedEvents.ToArray();
-    public Item[] GetItems() => _items.ToArray();
-        
-    private readonly IList<Item> _items = new List<Item>();
-    private readonly IList<EventStoreEvent> _allEvents = new List<EventStoreEvent>();
-    private readonly IList<EventStoreEvent> _uncommittedEvents = new List<EventStoreEvent>();
+    public static ShoppingCart Create() => new(ShoppingCartId.New());
 
     public ShoppingCart()
     {
-        var created = new ShoppingCartCreatedEvent(Guid.NewGuid().ToString());
-        AddEvent(created);
     }
     
-    public ShoppingCart(IEnumerable<EventStoreEvent> events)
+    private ShoppingCart(ShoppingCartId id)
     {
-       FromStorage(events);
+        var created = new ShoppingCartCreatedEvent(id);
+        Create(id, created);
     }
 
-    public void CommitEvents()
+    protected override void RegisterStateModification()
     {
-        _uncommittedEvents.Clear();
+        When<ShoppingCartItemAddedEvent>((currentState, @event) =>
+        {
+            var existingItem = currentState.Items.SingleOrDefault(item => item.Id == @event.Product.Id);
+            return currentState with
+            {
+                Items = existingItem is not null 
+                    ? currentState
+                        .Items
+                        .Where(item => item.Id != @event.Product.Id)
+                        .Append(existingItem.IncreaseQuantity())
+                        .ToImmutableArray()
+                    : currentState
+                        .Items
+                        .Append(new ShoppingCartItem(new Product(@event.Product)))
+                        .ToImmutableArray()
+            };
+        });
+        
+        When<ShoppingCartItemRemovedEvent>((currentState, @event) =>
+        {
+            var existingItem = currentState.Items.SingleOrDefault(item => item.Id == @event.Product.Id);
+            return currentState with
+            {
+                Items = existingItem is not null 
+                    ? currentState
+                        .Items
+                        .Where(item => item.Id != @event.Product.Id)
+                        .Append(existingItem.DecreaseQuantity())
+                        .ToImmutableArray()
+                    : currentState
+                        .Items
+                        .Where(item => item.Id != @event.Product.Id)
+                        .ToImmutableArray()
+            };
+        });
+        
+        When<ShoppingCartCheckedOutEvent>((currentState, @event) => currentState with
+        {
+            CheckedOut = true,
+            CheckedOutDate = @event.date
+        });
     }
 
-    public void AddItem(ShoppingCartItem item)
+    public void AddItem(Product item)
     {
         ArgumentNullException.ThrowIfNull(item);
 
@@ -47,11 +93,11 @@ public class ShoppingCart
         AddEvent(itemAdded);
     }
     
-    public void RemoveItem(ShoppingCartItem item)
+    public void RemoveItem(Product item)
     {
         ArgumentNullException.ThrowIfNull(item);
 
-        if (_items.All(cartItem => cartItem.Id != item.Id))
+        if (State.Items.All(cartItem => cartItem.Id != item.Id))
             throw new InvalidOperationException("Can not remove item that is not in cart");
 
         var itemRemoved = new ShoppingCartItemRemovedEvent(item);
@@ -61,57 +107,14 @@ public class ShoppingCart
     
     public void Checkout()
     {
-        if (CheckedOut)
+        if (State.CheckedOut)
             throw new InvalidOperationException("Can not checkout shopping cart, cart is already checked out");
         
-        if (!_items.Any())
+        if (!State.Items.Any())
             throw new InvalidOperationException("Can not checkout an empty shopping cart");
 
-        var checkedOut = new ShoppingCartCheckedOutEvent();
+        var checkedOut = new ShoppingCartCheckedOutEvent(DateTime.UtcNow);
         
         AddEvent(checkedOut);
-    }
-    
-    private void FromStorage(IEnumerable<EventStoreEvent> events)
-    {
-        foreach (var @event in events)
-        {
-            ApplyEvent(@event);
-            _allEvents.Add(@event);
-        }
-    }
-    
-    private void AddEvent(EventStoreEvent @event)
-    {
-        ApplyEvent(@event);
-        _allEvents.Add(@event);
-        _uncommittedEvents.Add(@event);
-    }
-
-    private void ApplyEvent(EventStoreEvent @event)
-    {
-        switch (@event)
-        {
-            case ShoppingCartCreatedEvent created:
-                Id = created.ShoppingCartId;
-                break;
-            case ShoppingCartItemAddedEvent added:
-                var existingItem = _items.SingleOrDefault(item => item.Id == added.Item.Id);
-                if (existingItem is null)
-                    _items.Add(new Item(added.Item.Id, added.Item.Name, added.Item.Cost));
-                else
-                    existingItem.IncreaseQuantity();
-                break;
-            case ShoppingCartItemRemovedEvent removed:
-                var itemToRemove = _items.Single(item => item.Id == removed.Item.Id);
-                if (itemToRemove.Quantity == 1)
-                    _items.Remove(itemToRemove);
-                else
-                    itemToRemove.DecreaseQuantity();
-                break;
-            case ShoppingCartCheckedOutEvent:
-                CheckedOut = true;
-                break;
-        }
     }
 }

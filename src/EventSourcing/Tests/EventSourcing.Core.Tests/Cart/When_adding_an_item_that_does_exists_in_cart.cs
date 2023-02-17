@@ -1,15 +1,16 @@
 ﻿using FluentAssertions;
 
-namespace EventSourcing.Core.Tests;
+namespace EventSourcing.Core.Tests.Cart;
 
 public class When_adding_an_item_that_does_exists_in_cart
 {
-    private readonly ShoppingCart _shoppingCart;
-    private readonly ShoppingCartItem _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly Core.ShoppingCart _shoppingCart;
+
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
 
     public When_adding_an_item_that_does_exists_in_cart()
     {
-        _shoppingCart = new ShoppingCart();
+        _shoppingCart = Core.ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
         _shoppingCart.AddItem(_beer);
     }
@@ -17,13 +18,23 @@ public class When_adding_an_item_that_does_exists_in_cart
     [Fact]
     public void Quantity_of_item_is_increased()
     {
-        var item = new ShoppingCart.Item(_beer.Id, _beer.Name, _beer.Cost);
-        item.IncreaseQuantity();
-        
+        var item = new ShoppingCartItem(
+            new ShoppingCartItemState
+            {
+                Cost = 20,
+                Name = _beer.Name,
+                Id = _beer.Id,
+                Quantity = 2
+            }
+        );
+
         _shoppingCart
             .GetItems()
             .Should()
-            .Equal(item);
+            .BeEquivalentTo(new []
+            { 
+                item
+            });
     }
     
     [Fact]
