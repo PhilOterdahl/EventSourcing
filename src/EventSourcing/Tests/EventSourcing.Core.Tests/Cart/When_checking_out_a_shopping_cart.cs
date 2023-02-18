@@ -1,35 +1,31 @@
-﻿using FluentAssertions;
+﻿using EventSourcing.Core.Tests.Aggregate;
+using FluentAssertions;
 
 namespace EventSourcing.Core.Tests.Cart;
 
-public class When_checking_out_a_shopping_cart
+public class When_checking_out_a_shopping_cart : AggregateTestBase<ShoppingCartId, ShoppingCartState, ShoppingCart>
 {
-    private readonly Core.ShoppingCart _shoppingCart;
     private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
 
     public When_checking_out_a_shopping_cart()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
-        _shoppingCart.AddItem(_beer);
-        _shoppingCart.Checkout(); 
+        Given(
+            new ShoppingCartCreatedEvent(ShoppingCartId.New()),
+            new ShoppingCartItemAddedEvent(_beer)
+        );
+        
+        When(cart => cart.Checkout());
+    }
+    
+    [Fact]
+    public void A_cart_checked_out_event_is_produced()
+    {
+        Then<ShoppingCartCheckedOutEvent>();
     }
     
     [Fact]
     public void Cart_is_set_to_checked_out()
     {
-        _shoppingCart
-            .CheckedOut
-            .Should()
-            .BeTrue();
-    }
-    
-    [Fact]
-    public void Checked_out_event_is_produced()
-    {
-        _shoppingCart
-            .GetAllEvents()
-            .OfType<ShoppingCartCheckedOutEvent>()
-            .Should()
-            .NotBeNullOrEmpty();
+        Then(state => state.CheckedOut.Should().BeTrue());
     }
 }

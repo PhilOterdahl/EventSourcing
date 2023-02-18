@@ -7,16 +7,16 @@ public abstract class Aggregate<TId, TState>
     where TState : AggregateState, new()
 {
     public bool HasUncommittedEvents() => _uncommittedEvents.Any();
-    public IEnumerable<EventStoreEvent> GetAllEvents() => _allEvents.Select(@event => @event.Event);
-    public IEnumerable<EventStoreEvent> GetUncommittedEvents() => _uncommittedEvents.Select(@event => @event.Event);
+    public IEnumerable<EventStoreEvent> GetAllEvents() => _allEvents.ToArray();
+    public IEnumerable<EventStoreEvent> GetUncommittedEvents() => _uncommittedEvents.ToArray();
 
-    public long Position => _allEvents.Count -1;
+    public long Position => _allEvents.Count;
     public TId Id => TId.FromString(State.StreamId);
     
     protected TState State { get; private set; } = new();
     
-    private List<EventRecord> _allEvents { get; set; } = new();
-    private List<EventRecord> _uncommittedEvents { get; } = new();
+    private List<EventStoreEvent> _allEvents { get; set; } = new();
+    private List<EventStoreEvent> _uncommittedEvents { get; } = new();
     private readonly AggregateStateModifier<TState> _stateModifier = new();
 
     public static implicit operator TState(Aggregate<TId, TState> load) => load.State;
@@ -33,16 +33,9 @@ public abstract class Aggregate<TId, TState>
         _stateModifier.When(modifyState);
     }
 
-    protected void Create(TId streamId, EventStoreEvent @event)
+    public void Load(IEnumerable<EventStoreEvent> events)
     {
-        State = SetId(State, streamId);
-        AddEvent(@event);
-    }
-    
-    public void Load(TId streamId, IEnumerable<EventRecord> events)
-    {
-        State = SetId(State, streamId);
-        State = _stateModifier.ApplyEvents(State, events);
+        State = _stateModifier.ApplyEvents(State, events, Position);
         _allEvents.AddRange(events);
     }
     
@@ -51,17 +44,13 @@ public abstract class Aggregate<TId, TState>
     
     protected void AddEvent(EventStoreEvent @event)
     {
-        var eventRecord = EventRecord.FromApplication(Guid.NewGuid(), Id, @event, Position);
-        ApplyEvent(eventRecord);
-        _uncommittedEvents.Add(eventRecord);
-        _allEvents.Add(eventRecord);
+        ApplyEvent(@event);
+        _uncommittedEvents.Add(@event);
+        _allEvents.Add(@event);
     }
     
-    private void ApplyEvent(EventRecord eventRecord)
+    private void ApplyEvent(EventStoreEvent @event)
     {
-        State = _stateModifier.ApplyEvent(State, eventRecord);
+        State = _stateModifier.ApplyEvent(State, @event, Position);
     }
-
-    private static TState SetId(TState state, string streamId) => 
-        state with { StreamId = streamId };
 }

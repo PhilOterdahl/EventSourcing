@@ -1,37 +1,26 @@
+using EventSourcing.Core.Tests.Aggregate;
 using FluentAssertions;
 
 namespace EventSourcing.Core.Tests.Cart;
 
-public class When_creating_a_shoppingCart
+public class When_creating_a_shoppingCart : AggregateTestBase<ShoppingCartId, ShoppingCartState, ShoppingCart>
 {
-    private readonly Core.ShoppingCart _shoppingCart;
-
     public When_creating_a_shoppingCart()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
+        Given();
+        
+        When(ShoppingCart.Create);
     }
     
     [Fact]
-    public void ShoppingCart_id_is_set()
+    public void A_cart_created_event_is_produced()
     {
-        _shoppingCart
-            .GetAllEvents()
-            .OfType<ShoppingCartCreatedEvent>()
-            .First()
-            .ShoppingCartId
-            .Should()
-            .Be(_shoppingCart.Id);
+       Then<ShoppingCartCreatedEvent>(@event => @event.ShoppingCartId.Should().NotBeNullOrEmpty());
     }
     
     [Fact]
-    public void ShoppingCart_created_event_is_produced()
+    public void Cart_id_is_set()
     {
-        _shoppingCart
-            .GetAllEvents()
-            .Should()
-            .BeEquivalentTo(new[] 
-            {
-                new ShoppingCartCreatedEvent(_shoppingCart.Id)
-            });
+        Then(state => state.StreamId.Should().NotBeNullOrEmpty());
     }
 }

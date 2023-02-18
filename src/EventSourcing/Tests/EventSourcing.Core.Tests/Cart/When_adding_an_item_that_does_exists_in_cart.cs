@@ -1,50 +1,47 @@
-﻿using FluentAssertions;
+﻿using EventSourcing.Core.Tests.Aggregate;
+using FluentAssertions;
 
 namespace EventSourcing.Core.Tests.Cart;
 
-public class When_adding_an_item_that_does_exists_in_cart
+public class When_adding_an_item_that_does_exists_in_cart : AggregateTestBase<ShoppingCartId, ShoppingCartState, ShoppingCart>
 {
-    private readonly Core.ShoppingCart _shoppingCart;
-
     private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
 
     public When_adding_an_item_that_does_exists_in_cart()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
-        _shoppingCart.AddItem(_beer);
-        _shoppingCart.AddItem(_beer);
-    }
-    
-    [Fact]
-    public void Quantity_of_item_is_increased()
-    {
-        var item = new ShoppingCartItem(
-            new ShoppingCartItemState
-            {
-                Cost = 20,
-                Name = _beer.Name,
-                Id = _beer.Id,
-                Quantity = 2
-            }
+        Given(
+            new ShoppingCartCreatedEvent(ShoppingCartId.New()),
+            new ShoppingCartItemAddedEvent(_beer)
         );
-
-        _shoppingCart
-            .GetItems()
-            .Should()
-            .BeEquivalentTo(new []
-            { 
-                item
-            });
+        
+        When(cart => cart.AddItem(_beer));
     }
     
     [Fact]
-    public void Item_added_event_is_produced()
+    public void A_item_added_event_is_produced()
     {
-        _shoppingCart
-            .GetAllEvents()
-            .OfType<ShoppingCartItemAddedEvent>()
-            .Last()
+        Then<ShoppingCartItemAddedEvent>(@event => @event.Product.Should().Be((ProductState)_beer));
+    }
+    
+    [Fact]
+    public void Quantity_of_item_in_cart_is_increased()
+    {
+        Then(state => state
+            .Items
             .Should()
-            .BeEquivalentTo(new ShoppingCartItemAddedEvent(_beer));
+            .BeEquivalentTo(new[]
+                {
+                    new ShoppingCartItem(
+                        new ShoppingCartItemState
+                        {
+                            Cost = 20,
+                            Name = _beer.Name,
+                            Id = _beer.Id,
+                            Quantity = 2
+                        }
+                    )
+                }
+            )
+        );
     }
 }
