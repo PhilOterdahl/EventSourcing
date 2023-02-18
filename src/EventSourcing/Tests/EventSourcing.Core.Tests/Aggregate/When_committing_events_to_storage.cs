@@ -5,7 +5,7 @@ namespace EventSourcing.Core.Tests.Aggregate;
 public class When_committing_events_to_storage
 {
     private readonly ShoppingCart _shoppingCart;
-    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", new Price(20, Currency.USD));
 
     public When_committing_events_to_storage()
     {

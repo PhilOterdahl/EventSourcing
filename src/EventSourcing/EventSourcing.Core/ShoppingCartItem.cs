@@ -4,17 +4,15 @@ public record ShoppingCartItemState
 {
     public required Guid Id { get; init; }
     public required string Name { get; init; }
-    public required decimal Cost { get; init; }
-    public required int Quantity { get; set; }
+    public required ShoppingCartItemPriceState Price { get; init; }
 }
 
 public class ShoppingCartItem
 {
     public Guid Id => _state.Id;
-    public decimal Cost => _state.Cost;
     public string Name => _state.Name;
-    public int Quantity => _state.Quantity;
-    
+    public ShoppingCartItemPrice Price => new(_state.Price);
+
     public static implicit operator ShoppingCartItemState(ShoppingCartItem item) => item._state;
     
     private ShoppingCartItemState _state;
@@ -24,9 +22,8 @@ public class ShoppingCartItem
         _state = new ShoppingCartItemState
         {
             Id = product.Id,
-            Cost = product.Cost,
+            Price = new ShoppingCartItemPrice(product.Price),
             Name = product.Name,
-            Quantity = 1
         };
     }
 
@@ -39,7 +36,7 @@ public class ShoppingCartItem
     {
         _state = _state with
         {
-            Quantity = _state.Quantity + 1
+           Price = Price.WithIncreasedQuantity()
         };
 
         return this;
@@ -47,12 +44,9 @@ public class ShoppingCartItem
 
     public ShoppingCartItem DecreaseQuantity()
     {
-        if (_state.Quantity - 1 <= 0)
-            throw new InvalidOperationException("Can not decrease quantity, quantity needs to be greater than 0");
-        
         _state = _state with
         {
-            Quantity = _state.Quantity - 1
+            Price = Price.WithDecreasedQuantity()
         };
 
         return this;

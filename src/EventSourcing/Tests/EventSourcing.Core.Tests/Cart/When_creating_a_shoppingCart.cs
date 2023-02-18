@@ -4,11 +4,11 @@ namespace EventSourcing.Core.Tests.Cart;
 
 public class When_creating_a_shoppingCart
 {
-    private readonly Core.ShoppingCart _shoppingCart;
+    private readonly ShoppingCart _shoppingCart;
 
     public When_creating_a_shoppingCart()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
+        _shoppingCart = ShoppingCart.Create();
     }
     
     [Fact]

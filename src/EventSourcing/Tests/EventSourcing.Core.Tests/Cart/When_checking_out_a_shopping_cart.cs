@@ -4,12 +4,12 @@ namespace EventSourcing.Core.Tests.Cart;
 
 public class When_checking_out_a_shopping_cart
 {
-    private readonly Core.ShoppingCart _shoppingCart;
-    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly ShoppingCart _shoppingCart;
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", new Price(20, Currency.USD));
 
     public When_checking_out_a_shopping_cart()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
+        _shoppingCart = ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
         _shoppingCart.Checkout(); 
     }

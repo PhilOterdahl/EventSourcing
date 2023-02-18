@@ -7,7 +7,7 @@ public class When_loading_events_from_storage
 {
     private readonly ShoppingCartId _id = ShoppingCartId.New();
     private readonly ShoppingCart _shoppingCart;
-    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", new Price(20, Currency.USD));
     private readonly DateTime _checkedOutDate = DateTime.UtcNow;
 
     public When_loading_events_from_storage()
@@ -53,10 +53,14 @@ public class When_loading_events_from_storage
         var item = new ShoppingCartItem(
             new ShoppingCartItemState
             {
-                Cost = 20,
+                Price = new ShoppingCartItemPriceState
+                {
+                    Price = 20,
+                    Quantity = 1,
+                    Currency = Currency.USD
+                },
                 Name = _beer.Name,
                 Id = _beer.Id,
-                Quantity = 1
             }
         );
 

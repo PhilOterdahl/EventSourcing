@@ -4,12 +4,12 @@ namespace EventSourcing.Core.Tests.Cart;
 
 public class When_removing_an_item_with_quantity_higher_than_one
 {
-    private readonly Core.ShoppingCart _shoppingCart;
-    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly ShoppingCart _shoppingCart;
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", new Price(20, Currency.USD));
 
     public When_removing_an_item_with_quantity_higher_than_one()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
+        _shoppingCart = ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
         _shoppingCart.AddItem(_beer);
         _shoppingCart.RemoveItem(_beer);
@@ -21,10 +21,14 @@ public class When_removing_an_item_with_quantity_higher_than_one
         var item = new ShoppingCartItem(
             new ShoppingCartItemState
             {
-                Cost = 20,
+                Price = new ShoppingCartItemPriceState
+                {
+                    Price = 20,
+                    Quantity = 1,
+                    Currency = Currency.USD
+                },
                 Name = _beer.Name,
-                Id = _beer.Id,
-                Quantity = 1
+                Id = _beer.Id
             }
         );
 

@@ -4,12 +4,12 @@ namespace EventSourcing.Core.Tests.Cart;
 
 public class When_adding_an_item_that_does_not_exist_in_cart
 {
-    private readonly Core.ShoppingCart _shoppingCart;
-    private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
+    private readonly ShoppingCart _shoppingCart;
+    private readonly Product _beer = new(Guid.NewGuid(), "beer", new Price(20, Currency.USD));
 
     public When_adding_an_item_that_does_not_exist_in_cart()
     {
-        _shoppingCart = Core.ShoppingCart.Create();
+        _shoppingCart = ShoppingCart.Create();
         _shoppingCart.AddItem(_beer);
     }
     
@@ -19,10 +19,14 @@ public class When_adding_an_item_that_does_not_exist_in_cart
         var item = new ShoppingCartItem(
             new ShoppingCartItemState
             {
-                Cost = 20,
+                Price = new ShoppingCartItemPriceState
+                {
+                    Price = 20,
+                    Quantity = 1,
+                    Currency = Currency.USD
+                },
                 Name = _beer.Name,
-                Id = _beer.Id,
-                Quantity = 1
+                Id = _beer.Id
             }
         );
 
