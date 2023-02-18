@@ -2,5 +2,5 @@
 
 namespace EventSourcing.Core.Aggregate;
 
-public delegate TAggregateState ModifyAggregateStateDelegate<TAggregateState>(TAggregateState state, EventRecord record)  
+public delegate TAggregateState ModifyAggregateStateDelegate<TAggregateState>(TAggregateState state, EventStoreEvent record)  
     where TAggregateState : AggregateState;

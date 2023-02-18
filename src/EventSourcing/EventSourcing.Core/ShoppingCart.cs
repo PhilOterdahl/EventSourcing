@@ -36,11 +36,16 @@ public class ShoppingCart : Aggregate<ShoppingCartId, ShoppingCartState>
     private ShoppingCart(ShoppingCartId id)
     {
         var created = new ShoppingCartCreatedEvent(id);
-        Create(id, created);
+        AddEvent(created);
     }
 
     protected override void RegisterStateModification()
     {
+        When<ShoppingCartCreatedEvent>((currentState, @event) => currentState with
+        {
+            StreamId = @event.ShoppingCartId
+        });
+        
         When<ShoppingCartItemAddedEvent>((currentState, @event) =>
         {
             var existingItem = currentState.Items.SingleOrDefault(item => item.Id == @event.Product.Id);

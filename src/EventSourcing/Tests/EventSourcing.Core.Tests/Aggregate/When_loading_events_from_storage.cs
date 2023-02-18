@@ -8,64 +8,23 @@ public class When_loading_events_from_storage
     private readonly ShoppingCartId _id = ShoppingCartId.New();
     private readonly ShoppingCart _shoppingCart;
     private readonly Product _beer = new(Guid.NewGuid(), "beer", 20);
-    private readonly DateTime _createdDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(1));
-    private readonly DateTime _itemAddedDate = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(20));
-    private readonly DateTime _removedDate = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(2));
     private readonly DateTime _checkedOutDate = DateTime.UtcNow;
 
     public When_loading_events_from_storage()
     {
-        var eventsLoadedFromStorage = new[]
+        var eventsLoadedFromStorage = new EventStoreEvent[]
         {
-            EventRecord.FromStorage(
-                Guid.NewGuid(),
-                _id,
-                new ShoppingCartCreatedEvent(_id),
-                typeof(ShoppingCartCreatedEvent).GetEventType(),
-                0,
-                _createdDate,
-                _createdDate.AddMilliseconds(50)
-            ),
-            EventRecord.FromStorage(
-                Guid.NewGuid(),
-                _id,
-                new ShoppingCartItemAddedEvent(_beer),
-                typeof(ShoppingCartItemAddedEvent).GetEventType(),
-                1,
-                _itemAddedDate,
-                _itemAddedDate.AddMilliseconds(50)
-            ),
-            EventRecord.FromStorage(
-                Guid.NewGuid(),
-                _id,
-                new ShoppingCartItemAddedEvent(_beer),
-                typeof(ShoppingCartItemAddedEvent).GetEventType(),
-                2,
-                _itemAddedDate,
-                _itemAddedDate.AddMilliseconds(50)
-            ),
-            EventRecord.FromStorage(
-                Guid.NewGuid(),
-                _id,
-                new ShoppingCartItemRemovedEvent(_beer),
-                typeof(ShoppingCartItemRemovedEvent).GetEventType(),
-                3,
-                _removedDate,
-                _removedDate.AddMilliseconds(50)
-            ),
-            EventRecord.FromStorage(
-                Guid.NewGuid(),
-                _id,
-                new ShoppingCartCheckedOutEvent(_checkedOutDate),
-                typeof(ShoppingCartCheckedOutEvent).GetEventType(),
-                4,
-                _checkedOutDate,
-                _checkedOutDate.AddMilliseconds(50)
-            )
+            new ShoppingCartCreatedEvent(_id),
+            new ShoppingCartItemAddedEvent(_beer),
+            new ShoppingCartItemAddedEvent(_beer),
+
+            new ShoppingCartItemRemovedEvent(_beer),
+            new ShoppingCartCheckedOutEvent(_checkedOutDate)
+
         };
         
         _shoppingCart = new ShoppingCart();
-        _shoppingCart.Load(_id, eventsLoadedFromStorage);
+        _shoppingCart.Load(eventsLoadedFromStorage);
     }
     
     [Fact]

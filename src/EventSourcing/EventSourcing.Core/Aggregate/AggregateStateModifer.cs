@@ -18,21 +18,7 @@ public class AggregateStateModifier<TState>
 
         _modifyStateHandlers.Add(
             eventName,
-            (state, @event) => modifyStateAction(state, (TEvent)@event.Event)
-        );
-    }
-    
-    public void When<TEvent>(Func<TState, TEvent, DateTime, TState> modifyStateAction) where TEvent : EventStoreEvent
-    {
-        ArgumentNullException.ThrowIfNull(modifyStateAction);
-
-        var eventName = GetEventType<TEvent>();
-
-        ValidateActionForEventDoesNoAlreadyExist(eventName);
-
-        _modifyStateHandlers.Add(
-            eventName,
-            (state, record) => modifyStateAction(state, (TEvent)record.Event, record.Date)
+            (state, @event) => modifyStateAction(state, (TEvent)@event)
         );
     }
 
@@ -44,39 +30,33 @@ public class AggregateStateModifier<TState>
             throw new ArgumentException($"There is already an modify state action for event {eventName}");
     }
 
-    public TState ApplyEvents(TState state, IEnumerable<EventRecord> events) => events.Aggregate(state, ApplyEvent);
+    public TState ApplyEvents(TState state, IEnumerable<EventStoreEvent> events, long startPosition) => events.Aggregate(
+        state,
+        (aggregateState, @event) => ApplyEvent(aggregateState, @event, startPosition)
+    );
 
-    public TState ApplyEvent(TState state, EventRecord eventRecord)
+    public TState ApplyEvent(TState state, EventStoreEvent @event, long position)
     {
-        var key = eventRecord.EventType;
-
-        state = UpdateLastEventAppeared(eventRecord, state);
-
-        var isFirstEvent = eventRecord.Position == 0;
-        if (isFirstEvent)
-            state = SetCreated(eventRecord, state);
+        var key = @event.GetEventType();
         
+        var isFirstEvent = position == 0;
+
         var handler = _modifyStateHandlers.TryGetValue(key, out ModifyAggregateStateDelegate<TState> value)
             ? value
             : null;
 
+        if (isFirstEvent && handler is null && state.StreamId is null)
+            throw new InvalidOperationException(
+                $"Handler for event: {key} is null, the first event needs to set the Id of the aggregate");
+        
         if (handler is null)
             return state;
         
-        var modifiedState = handler(state, eventRecord);
+        var modifiedState = handler(state, @event);
+
+        if (isFirstEvent && modifiedState.StreamId is null)
+            throw new InvalidOperationException("Id is not set for aggregate, the first event needs to set the Id of the aggregate");
 
         return modifiedState;
     }
-
-    private static TState SetCreated(EventRecord eventRecord, TState state) =>
-        state with
-        {
-            Created = eventRecord.Date
-        };
-    
-    private static TState UpdateLastEventAppeared(EventRecord eventRecord, TState state) =>
-        state with
-        {
-            LastEventAppeared = eventRecord.Date
-        };
 }
