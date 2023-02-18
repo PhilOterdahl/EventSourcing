@@ -18,16 +18,23 @@ public record ShoppingCartState : AggregateState
 {
     public bool CheckedOut { get; init; }
     public DateTime? CheckedOutDate { get; init; }
-    public ImmutableArray<ShoppingCartItem> Items { get; init; } = ImmutableArray<ShoppingCartItem>.Empty;
+    public ImmutableArray<ShoppingCartItemState> Items { get; init; } = ImmutableArray<ShoppingCartItemState>.Empty;
 }
 
 public class ShoppingCart : Aggregate<ShoppingCartId, ShoppingCartState>
 {
-    public ShoppingCartItem[] GetItems() => State.Items.ToArray();
     public bool CheckedOut => State.CheckedOut;
     public DateTime? CheckedOutDate => State.CheckedOutDate;
     
+    public IEnumerable<ShoppingCartItem> GetItems() => State
+        .Items
+        .Select(item => new ShoppingCartItem(item));
+    
     public static ShoppingCart Create() => new(ShoppingCartId.New());
+    
+    private static IEnumerable<ShoppingCartItem> GetItems(ShoppingCartState state) => state
+        .Items
+        .Select(item => new ShoppingCartItem(item));
 
     public ShoppingCart()
     {
@@ -48,36 +55,38 @@ public class ShoppingCart : Aggregate<ShoppingCartId, ShoppingCartState>
         
         When<ShoppingCartItemAddedEvent>((currentState, @event) =>
         {
-            var existingItem = currentState.Items.SingleOrDefault(item => item.Id == @event.Product.Id);
+            var items = GetItems(currentState);
+            var existingItem = items.SingleOrDefault(item => item.Id == @event.Product.Id);
             return currentState with
             {
                 Items = existingItem is not null 
-                    ? currentState
-                        .Items
+                    ? items
                         .Where(item => item.Id != @event.Product.Id)
                         .Append(existingItem.IncreaseQuantity())
+                        .Select(item => (ShoppingCartItemState)item)
                         .ToImmutableArray()
-                    : currentState
-                        .Items
+                    : items
                         .Append(new ShoppingCartItem(new Product(@event.Product)))
+                        .Select(item => (ShoppingCartItemState)item)
                         .ToImmutableArray()
             };
         });
         
         When<ShoppingCartItemRemovedEvent>((currentState, @event) =>
         {
-            var existingItem = currentState.Items.SingleOrDefault(item => item.Id == @event.Product.Id);
+            var items = GetItems(currentState);
+            var existingItem = items.Single(item => item.Id == @event.Product.Id);
             return currentState with
             {
                 Items = existingItem is not null 
-                    ? currentState
-                        .Items
+                    ? items
                         .Where(item => item.Id != @event.Product.Id)
                         .Append(existingItem.DecreaseQuantity())
+                        .Select(item => (ShoppingCartItemState)item)
                         .ToImmutableArray()
-                    : currentState
-                        .Items
+                    : items
                         .Where(item => item.Id != @event.Product.Id)
+                        .Select(item => (ShoppingCartItemState)item)
                         .ToImmutableArray()
             };
         });

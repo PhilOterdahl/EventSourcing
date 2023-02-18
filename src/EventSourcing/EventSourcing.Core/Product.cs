@@ -1,6 +1,6 @@
 ﻿namespace EventSourcing.Core;
 
-public record ProductState
+public class ProductState
 {
     public required Guid Id { get;  init; }
     public required string Name { get; init; }

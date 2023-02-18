@@ -17,7 +17,6 @@ public class When_loading_events_from_storage
             new ShoppingCartCreatedEvent(_id),
             new ShoppingCartItemAddedEvent(_beer),
             new ShoppingCartItemAddedEvent(_beer),
-
             new ShoppingCartItemRemovedEvent(_beer),
             new ShoppingCartCheckedOutEvent(_checkedOutDate)
 
